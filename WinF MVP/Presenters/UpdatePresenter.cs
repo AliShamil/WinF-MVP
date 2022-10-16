@@ -27,10 +27,10 @@ namespace WinF_MVP.Presenters
             StringBuilder sb = new StringBuilder();
 
             if (!ValidateName(_updateView.FirstName))
-                sb.Append("Invalid FirstName\n");
+                sb.Append($"Invalid {nameof(_updateView.FirstName)}\n");
 
             if (!ValidateName(_updateView.LastName))
-                sb.Append("Invalid LastName\n");
+                sb.Append($"Invalid {nameof(_updateView.LastName)}\n");
 
             if ((DateTime.Now.Year - _updateView.BirthDate.Year)<15)
                 sb.Append("Invalid Age (min age:15)\n");

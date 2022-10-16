@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WinF_MVP.Interfaces;
 using WinF_MVP.Models;
+using WinF_MVP.Repositories;
 
 namespace WinF_MVP.Presenters
 {
@@ -14,24 +15,19 @@ namespace WinF_MVP.Presenters
         private readonly IMainView _mainView;
         private readonly IAddView _addView;
         private readonly IUpdateView _updateView;
-        private readonly List<Student> _students;
+        private readonly IStudentRepository _repository;
 
-        public MainPresenter(IMainView mainView, IAddView addView, IUpdateView updateView)
+        public MainPresenter(IMainView mainView, IAddView addView, IUpdateView updateView, IStudentRepository repository)
         {
             _mainView = mainView;
             _addView = addView;
             _updateView = updateView;
+            _repository=repository;
 
-            _students = new List<Student>()
-        {
-            new ("Miri","Miri",new DateOnly(2003,9,1),8.3f),
-            new ("Tural","Tural",new DateOnly(2003,9,1),8.3f),
-            new ("Kamran","Kamran",new DateOnly(2003,9,1),8.3f),
-        };
 
             _bindingSource = new();
 
-            _bindingSource.DataSource = _students;
+            _bindingSource.DataSource = _repository.GetList();
             _mainView.SetStudentListBindingSource(_bindingSource);
             _mainView.SearchEvent += _mainView_SearchEvent;
             _mainView.DeleteEvent += _mainView_DeleteEvent;
@@ -44,23 +40,29 @@ namespace WinF_MVP.Presenters
         {
             var searchValue = _mainView.SearchValue;
 
-            if (!string.IsNullOrWhiteSpace(searchValue))
-                _bindingSource.DataSource = _students.Where(s => s.FirstName.ToLower().Contains(searchValue.ToLower()) || s.LastName.ToLower().Contains(searchValue.ToLower())).ToList();
-            else
-                _bindingSource.DataSource = _students;
+            bool isNullOrWhiteSpace = string.IsNullOrWhiteSpace(searchValue);
+            _bindingSource.DataSource = isNullOrWhiteSpace switch
+            {
+                true => _repository.GetList(),
+                false =>_repository.GetList(s => s.FirstName.Contains(searchValue, StringComparison.OrdinalIgnoreCase) 
+                || s.LastName.Contains(searchValue, StringComparison.OrdinalIgnoreCase))
+            };
+
         }
 
         private void _mainView_DeleteEvent(object? sender, EventArgs e)
         {
-            if (_bindingSource.Current is null)
+            var deletedItem = _bindingSource.Current as Student;
+            if (deletedItem is null)
                 return;
 
-            _bindingSource.Remove(_bindingSource.Current);
+            _repository.Remove(deletedItem);
+            _bindingSource.Remove(deletedItem);
         }
 
         private void _mainView_AddEvent(object? sender, EventArgs e)
         {
-            var result = ((Form)_addView).ShowDialog();
+            var result = _addView.ShowDialog();
 
             if (result == DialogResult.Cancel)
                 return;
@@ -69,37 +71,42 @@ namespace WinF_MVP.Presenters
             {
                 FirstName = _addView.FirstName,
                 LastName = _addView.LastName,
-                DateOfBirth = DateOnly.Parse(_addView.BirthDate.ToShortDateString()),
+                DateOfBirth = _addView.BirthDate,
                 Score = (float)_addView.Score
             };
 
+            _repository.Add(student);
             _bindingSource.Add(student);
         }
 
         private void _mainView_UpdateEvent(object? sender, EventArgs e)
         {
-            if (_bindingSource.Current is null)
+            var student = _bindingSource.Current as Student;
+            if (student is null)
             {
                 MessageBox.Show("Pls select person for delete", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
-            var result = ((Form)_updateView).ShowDialog();
+            _updateView.FirstName = student.FirstName;
+            _updateView.LastName = student.LastName;
+            _updateView.BirthDate = student.DateOfBirth;
+            _updateView.Score = (decimal)student.Score;
+
+            var result = _updateView.ShowDialog();
 
             if (result == DialogResult.Cancel)
                 return;
 
-            var student = _bindingSource.Current as Student;
 
 
             student.FirstName = _updateView.FirstName;
             student.LastName = _updateView.LastName;
-            student.DateOfBirth = DateOnly.Parse(_updateView.BirthDate.ToShortDateString());
+            student.DateOfBirth = _updateView.BirthDate;
             student.Score = (float)_updateView.Score;
 
-
-
-            _bindingSource[_bindingSource.IndexOf(_bindingSource.Current)] = student;
+            _repository.Update(student);
+            _bindingSource.ResetCurrentItem();
         }
     }
 }

@@ -18,13 +18,32 @@ namespace WinF_MVP.Views
             InitializeComponent();
         }
 
-        public string FirstName => txt_first_name.Text;
+        public string FirstName
+        {
+            get => txt_first_name.Text;
+            set => txt_first_name.Text = value;
+        }
 
-        public string LastName => txt_last_name.Text;
 
-        public decimal Score => num_score.Value;
+        public string LastName
+        {
+            get => txt_last_name.Text;
+            set => txt_last_name.Text = value;
+        }
+      
+        public decimal Score
+        {
+            get => num_score.Value;
+            set => num_score.Value = value;
+        }
+  
 
-        public DateTime BirthDate => monthCalendar1.SelectionStart;
+        public DateTime BirthDate
+        {
+            get => monthCalendar1.SelectionStart;
+            set => monthCalendar1.SelectionStart= value;
+        }
+     
 
         public event EventHandler SaveEvent;
         public event EventHandler CancelEvent;

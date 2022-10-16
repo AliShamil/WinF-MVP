@@ -14,5 +14,8 @@ namespace WinF_MVP.Interfaces
         DateTime BirthDate { get; }
         event EventHandler SaveEvent;
         event EventHandler CancelEvent;
+        
+        DialogResult ShowDialog();
+        DialogResult DialogResult { get; set; }
     }
 }
